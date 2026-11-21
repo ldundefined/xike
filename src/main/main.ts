@@ -10,8 +10,10 @@ import { setWindows10Glass } from '../platform/glass';
 import { Store } from '../storage/store';
 import { createWindowsAdapter } from '../platform/windows';
 import { kinds, type Command, type StoredData, type Result } from '../shared/types';
+import { isLanguage, translate, translator } from '../shared/i18n';
 
 const testMode = process.env.XIKE_TEST === '1';
+const skipNativeGlass = testMode && process.env.XIKE_TEST_NO_NATIVE === '1';
 if (testMode) app.setPath('userData', process.env.XIKE_TEST_PROFILE ?? join(app.getPath('temp'), `xike-test-${process.pid}`));
 app.setAppUserModelId('cn.xike.desktop');
 const ownsLock = app.requestSingleInstanceLock();
@@ -33,12 +35,21 @@ const opaqueWindows = new WeakSet<BrowserWindow>();
 const iconPath = () => join(app.getAppPath(), 'assets', 'icon.png');
 const tickInput = () => ({ now: Date.now(), monotonic: performance.now(),
   idleSeconds: powerMonitor.getSystemIdleTime(), locked, suspended });
-const appearance = () => resolveAppearance(data.settings, {
+const appearance = () => { const result = resolveAppearance(data.settings, {
   platform: process.platform, release: release(), systemDark: nativeTheme.shouldUseDarkColors,
   highContrast: nativeTheme.shouldUseHighContrastColors, reducedTransparency: nativeTheme.prefersReducedTransparency,
-  nativeFailed: nativeMaterialFailed,
-});
-const snapshot = () => ({ ...engine.snapshot(Date.now(), testMode), version: app.getVersion(), appearance: appearance() });
+  nativeFailed: nativeMaterialFailed || skipNativeGlass,
+}); return { ...result, glassReason: translate(data.settings.language, result.glassReason) }; };
+const text = (message: string) => translate(data?.settings.language ?? 'en', message);
+const snapshot = () => {
+  const state = engine.snapshot(Date.now(), testMode);
+  return { ...state, message: text(state.message), pauseReason: state.pauseReason ? text(state.pauseReason) : null, version: app.getVersion(), appearance: appearance() };
+};
+function syncLanguage() {
+  for (const window of BrowserWindow.getAllWindows()) window.setTitle(text(allowed.get(window.webContents.id) === 'settings' ? '息刻 · 设置' : '息刻'));
+  tray?.setToolTip(text('息刻 · 双击打开设置'));
+  rebuildTray();
+}
 
 function applyWindowAppearance(window: BrowserWindow) {
   if (window.isDestroyed()) return;
@@ -46,7 +57,7 @@ function applyWindowAppearance(window: BrowserWindow) {
   if (opaqueWindows.has(window)) current = { ...current, material: 'solid' };
   const key = `${current.material}:${current.theme}`;
   if (materialCache.get(window) === key) return;
-  if (supportsAcrylic(process.platform, release())) {
+  if (!skipNativeGlass && supportsAcrylic(process.platform, release())) {
     try {
       if (supportsSystemBackdrop(process.platform, release())) window.setBackgroundMaterial(current.material === 'acrylic' ? 'acrylic' : 'none');
       else setWindows10Glass(window, current.material === 'acrylic', current.theme === 'dark');
@@ -76,7 +87,7 @@ function createWindow(role: 'widget' | 'settings' | 'notice', width: number, hei
     width, height, show: false, frame: role === 'settings', resizable: role === 'settings',
     transparent: role !== 'settings' && !supportsSystemBackdrop(process.platform, release()),
     minimizable: role === 'settings', maximizable: false, fullscreenable: false,
-    skipTaskbar: role !== 'settings', backgroundColor: appearance().theme === 'light' ? '#f3f5f1' : '#272c30', title: role === 'settings' ? '息刻 · 设置' : '息刻',
+    skipTaskbar: role !== 'settings', backgroundColor: appearance().theme === 'light' ? '#f3f5f1' : '#272c30', title: text(role === 'settings' ? '息刻 · 设置' : '息刻'),
     autoHideMenuBar: true, roundedCorners: role !== 'widget', hasShadow: true, icon: iconPath(),
     webPreferences: { preload: join(__dirname, '../preload/preload.cjs'),
       contextIsolation: true, nodeIntegration: false, sandbox: true, backgroundThrottling: false },
@@ -140,23 +151,24 @@ function showNotice(focus = false) {
   } else { focus ? notice.show() : notice.showInactive(); }
 }
 function rebuildTray() {
+  const t = translator(data.settings.language);
   tray?.setContextMenu(Menu.buildFromTemplate([
-    { label: '息刻  V' + app.getVersion(), enabled: false },
+    { label: t('息刻') + '  V' + app.getVersion(), enabled: false },
     { type: 'separator' },
-    { label: '打开设置', click: openSettings },
-    { label: widget?.isVisible() ? '隐藏桌面组件' : '显示桌面组件', click: () => {
+    { label: t('打开设置'), click: openSettings },
+    { label: t(widget?.isVisible() ? '隐藏桌面组件' : '显示桌面组件'), click: () => {
       if (widget?.isVisible()) widget.hide(); else showWidget(); rebuildTray();
     } },
-    { label: engine.manualPaused ? '恢复健康提醒' : '暂停健康提醒', click: () => {
+    { label: t(engine.manualPaused ? '恢复健康提醒' : '暂停健康提醒'), click: () => {
       engine.manualPaused = !engine.manualPaused; pulse(); rebuildTray();
     } },
-    { label: '查看当前提醒', click: () => { showNotice(true); broadcast(); } },
-    { label: '跳过本次关机', enabled: engine.shutdownAt !== null, click: () => {
+    { label: t('查看当前提醒'), click: () => { showNotice(true); broadcast(); } },
+    { label: t('跳过本次关机'), enabled: engine.shutdownAt !== null, click: () => {
       void command({ type: 'cancel-shutdown' }, 'widget');
     } },
-    { label: '重置组件到右侧', click: () => { data.position = undefined; fitWidget(true); showWidget(); } },
+    { label: t('重置组件到右侧'), click: () => { data.position = undefined; fitWidget(true); showWidget(); } },
     { type: 'separator' },
-    { label: '退出息刻', click: () => app.quit() },
+    { label: t('退出息刻'), click: () => app.quit() },
   ]));
 }
 async function command(raw: unknown, role: 'widget' | 'settings' | 'notice'): Promise<Result> {
@@ -164,9 +176,17 @@ async function command(raw: unknown, role: 'widget' | 'settings' | 'notice'): Pr
     if (!raw || typeof raw !== 'object' || typeof (raw as Command).type !== 'string') throw new Error('操作格式无效');
     const cmd = raw as Command;
     switch (cmd.type) {
+      case 'language': {
+        if (role !== 'settings') throw new Error('请在设置窗口修改配置');
+        if (!isLanguage(cmd.language)) throw new Error('请选择有效的界面语言');
+        const settings = { ...data.settings, language: cmd.language };
+        store.save({ ...data, settings }); data.settings = settings; engine.updateSettings(settings);
+        engine.message = '语言已保存'; syncLanguage();
+        break;
+      }
       case 'appearance': {
         if (role !== 'settings') throw new Error('请在设置窗口切换外观');
-        const settings = validateSettings({ ...data.settings, theme: cmd.theme, glass: cmd.glass });
+        const settings = validateSettings({ ...data.settings, theme: cmd.theme, glass: cmd.glass, glassTransparency: cmd.transparency ?? data.settings.glassTransparency });
         store.save({ ...data, settings });
         data.settings = settings; engine.updateSettings(settings); syncAppearance();
         engine.message = '外观已应用并保存';
@@ -182,7 +202,7 @@ async function command(raw: unknown, role: 'widget' | 'settings' | 'notice'): Pr
       case 'cancel-rest': engine.cancelRest(); break;
       case 'settings': {
         if (role !== 'settings') throw new Error('请在设置窗口修改配置');
-        const settings = validateSettings(cmd.settings);
+        const settings = validateSettings({ ...cmd.settings, language: data.settings.language });
         const previous = data.settings;
         const changed = settings.autoStart !== previous.autoStart;
         if (changed) system.setAutoStart(settings.autoStart);
@@ -221,7 +241,7 @@ async function command(raw: unknown, role: 'widget' | 'settings' | 'notice'): Pr
   } catch (error) {
     const message = error instanceof Error ? error.message : '操作失败';
     report(message); rebuildTray();
-    return { ok: false, error: message };
+    return { ok: false, error: text(message) };
   }
 }
 function pulse() {
@@ -297,7 +317,7 @@ else {
     screen.on('display-removed', () => fitWidget());
     screen.on('display-metrics-changed', () => fitWidget());
     tray = new Tray(nativeImage.createFromPath(iconPath()).resize({ width: 20, height: 20 }));
-    tray.setToolTip('息刻 · 双击打开设置');
+    tray.setToolTip(text('息刻 · 双击打开设置'));
     tray.on('double-click', openSettings);
     rebuildTray();
     powerMonitor.on('lock-screen', () => { locked = true; pulse(); });
@@ -305,18 +325,18 @@ else {
     powerMonitor.on('suspend', () => { suspended = true; pulse(); });
     powerMonitor.on('resume', () => { suspended = false; pulse(); });
     ipcMain.handle('xike:get-state', event => {
-      if (!allowed.has(event.sender.id) || event.senderFrame !== event.sender.mainFrame) throw new Error('窗口无权限');
+      if (!allowed.has(event.sender.id) || event.senderFrame !== event.sender.mainFrame) throw new Error(text('窗口无权限'));
       return snapshot();
     });
     ipcMain.handle('xike:command', (event, input) => {
       const role = allowed.get(event.sender.id);
-      if (!role || event.senderFrame !== event.sender.mainFrame) return { ok: false, error: '窗口无权限' };
+      if (!role || event.senderFrame !== event.sender.mainFrame) return { ok: false, error: text('窗口无权限') };
       return command(input, role);
     });
     timer = setInterval(pulse, 1000);
     // Test runner uses this switch to inspect the real settings UI without automating the tray.
     if (testMode && process.argv.includes('--test-settings')) openSettings();
   }).catch(error => {
-    dialog.showErrorBox('息刻启动失败', String(error)); app.quit();
+    dialog.showErrorBox(text('息刻启动失败'), text(error instanceof Error ? error.message : String(error))); app.quit();
   });
 }

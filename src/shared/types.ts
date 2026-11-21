@@ -1,6 +1,7 @@
 export const kinds = ['eye', 'water', 'move'] as const;
 export type Kind = typeof kinds[number];
 export type Theme = 'light' | 'dark' | 'system';
+export type Language = 'en' | 'zh-CN';
 export interface Appearance {
   theme: 'light' | 'dark';
   material: 'solid' | 'acrylic';
@@ -8,8 +9,10 @@ export interface Appearance {
   glassReason: string;
 }
 export interface Settings {
+  language: Language;
   theme: Theme;
   glass: boolean;
+  glassTransparency: number;
   eyeMinutes: number;
   waterMinutes: number;
   moveMinutes: number;
@@ -23,7 +26,8 @@ export interface Settings {
   quietEnd: string;
 }
 export const defaultSettings: Settings = {
-  theme: 'light', glass: true,
+  language: 'en',
+  theme: 'light', glass: true, glassTransparency: 50,
   eyeMinutes: 20, waterMinutes: 60, moveMinutes: 50,
   eyeSeconds: 20, moveSeconds: 300, idleMinutes: 2,
   autoStart: false, sound: false, quietEnabled: false,
@@ -52,7 +56,8 @@ export interface Snapshot {
   testMode: boolean;
 }
 export type Command =
-  | { type: 'appearance'; theme: Theme; glass: boolean }
+  | { type: 'language'; language: Language }
+  | { type: 'appearance'; theme: Theme; glass: boolean; transparency?: number }
   | { type: 'pause' }
   | { type: 'start'; kind: Kind }
   | { type: 'snooze'; kind: Kind }

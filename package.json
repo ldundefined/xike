@@ -1,7 +1,7 @@
 {
   "name": "xike",
   "productName": "息刻",
-  "version": "0.4.0",
+  "version": "1.1.0",
   "description": "息刻 · Windows 桌面健康提醒",
   "author": "息刻",
   "private": true,
@@ -39,7 +39,7 @@
     "appId": "cn.xike.desktop",
     "productName": "息刻",
     "directories": {
-      "output": "release",
+      "output": "release/v${version}",
       "buildResources": "assets"
     },
     "files": [

@@ -9,7 +9,7 @@ test('配置、预约和位置可原子写入并恢复', () => {
   const directory = mkdtempSync(join(tmpdir(), 'xike-store-'));
   try {
     const store = new Store(directory), data = store.load();
-    data.settings.eyeMinutes = 30; data.shutdownTime = '23:30'; data.consumedShutdownDate = '2026-11-21'; data.position = { x: -300, y: 100 };
+    data.settings.eyeMinutes = 30; data.settings.language = 'zh-CN'; data.settings.glassTransparency = 73; data.shutdownTime = '23:30'; data.consumedShutdownDate = '2026-11-21'; data.position = { x: -300, y: 100 };
     store.save(data); assert.deepEqual(new Store(directory).load(), data);
     assert.equal(readdirSync(directory).includes('settings.json.tmp'), false);
   } finally { rmSync(directory, { recursive: true }); }
@@ -30,12 +30,14 @@ test('旧配置迁移保留提醒和位置，补充主题但不把单次预约�
   const directory = mkdtempSync(join(tmpdir(), 'xike-store-'));
   try {
     const store = new Store(directory), data = store.load();
-    const { theme, glass, ...legacySettings } = data.settings;
+    const { theme, glass, language, glassTransparency, ...legacySettings } = data.settings;
     legacySettings.eyeMinutes = 35;
     writeFileSync(store.path, JSON.stringify({ schemaVersion: 1, settings: legacySettings, shutdownAt: Date.now() + 900_000, position: { x: 12, y: 30 } }));
     const migrated = store.load();
     assert.equal(migrated.schemaVersion, 2); assert.equal(migrated.settings.theme, 'light'); assert.equal(migrated.settings.glass, true);
     assert.equal(migrated.settings.eyeMinutes, 35); assert.deepEqual(migrated.position, { x: 12, y: 30 });
+    assert.equal(migrated.settings.language, 'en');
+    assert.equal(migrated.settings.glassTransparency, 50);
     assert.equal(migrated.shutdownTime, null); assert.equal(store.warning, '');
   } finally { rmSync(directory, { recursive: true }); }
 });

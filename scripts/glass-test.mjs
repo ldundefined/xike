@@ -23,7 +23,7 @@ try {
       frame: false, skipTaskbar: true, show: false, backgroundColor: '#ffffff' });
     await backdrop.loadURL('data:text/html,' + encodeURIComponent('<html><body style="margin:0;height:100vh;background:repeating-conic-gradient(#71bad5 0% 25%,#f4bd7a 0% 50%) 0 0/40px 40px"></body></html>'));
     globalThis.xikeGlassFixture = backdrop;
-    backdrop.show(); widget.show(); widget.setAlwaysOnTop(true); widget.moveTop();
+    backdrop.setAlwaysOnTop(true); backdrop.showInactive(); widget.show(); widget.setAlwaysOnTop(true); widget.moveTop();
   });
   mkdirSync('docs/screenshots', { recursive: true });
   for (const [name, glass] of [['solid-desktop', false], ['glass-desktop', true]]) {
@@ -39,7 +39,9 @@ try {
     });
     const capture = await app.evaluate(async ({ BrowserWindow, desktopCapturer, screen }, sampleY) => {
       const widget = BrowserWindow.getAllWindows().find(w => w.webContents.getURL().includes('view=widget'));
+      globalThis.xikeGlassFixture.moveTop();
       widget.moveTop();
+      await new Promise(resolve => setTimeout(resolve, 300));
       const b = widget.getBounds(), display = screen.getDisplayMatching(b), scale = display.scaleFactor;
       const sources = await desktopCapturer.getSources({ types: ['screen'], thumbnailSize: { width: Math.round(display.size.width * scale), height: Math.round(display.size.height * scale) } });
       const source = sources.find(s => s.display_id === String(display.id)) ?? sources[0];
@@ -61,9 +63,9 @@ try {
       return { base64: crop.toPNG().toString('base64'), variance, maxStep };
     }, sampleY);
     console.log('桌面背景像素验证', name, capture.variance, capture.maxStep);
+    writeFileSync(`docs/screenshots/${name}.png`, Buffer.from(capture.base64, 'base64'));
     if (glass) { assert.ok(capture.variance > 3, '玻璃必须透出桌面测试图案'); assert.ok(capture.maxStep < 35, '桌面图案的边缘必须被模糊'); }
     else assert.ok(capture.variance < 1, '实色模式不应透出桌面图案');
-    writeFileSync(`docs/screenshots/${name}.png`, Buffer.from(capture.base64, 'base64'));
   }
   console.log('已捕获受控棋盘背景上的真实 Windows 桌面合成截图，请目视检查玻璃模糊。');
 } finally { await app.close(); }

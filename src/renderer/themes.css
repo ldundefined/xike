@@ -15,7 +15,7 @@
   --button: #c0dfca;
   --button-text: #204b36;
   --warm: #f1e5cc;
-  --glass-tint: rgba(246, 249, 242, .5);
+  --glass-tint: rgba(246, 249, 242, var(--glass-alpha, .5));
   --card-glass: rgba(255, 255, 250, .64);
   --error-bg: #fff0e5;
   --error-text: #79401f;
@@ -38,7 +38,7 @@
   --button: #afd8bf;
   --button-text: #203b2b;
   --warm: #4c412c;
-  --glass-tint: rgba(39, 46, 43, .5);
+  --glass-tint: rgba(39, 46, 43, var(--glass-alpha, .5));
   --card-glass: rgba(61, 71, 65, .55);
   --error-bg: #4b3427;
   --error-text: #ffe0cc;
@@ -59,6 +59,16 @@ html, body, #root { background: transparent; }
 .status.muted { color: var(--muted); }
 .number-field { color: var(--text); }
 input { background: var(--field); border-color: var(--field-edge); color: var(--text); }
+select { font: inherit; color: var(--text); background: var(--field); border: 1px solid var(--field-edge); border-radius: 6px; padding: 8px 10px; min-width: 130px; }
+select:focus-visible { outline: 2px solid var(--mint); outline-offset: 3px; }
+.language-settings .preference-row { margin-bottom: 0; }
+.transparency-control { border: 1px solid var(--line); border-radius: 7px; padding: 13px 14px; margin-bottom: 15px; }
+.transparency-control > label { display: flex; justify-content: space-between; font-size: 12px; font-weight: 500; }
+.transparency-control output { color: var(--mint); font-variant-numeric: tabular-nums; }
+.transparency-control input[type='range'] { display: block; width: 100%; padding: 0; margin: 15px 0 8px; accent-color: var(--mint); cursor: pointer; }
+.range-endpoints { display: flex; justify-content: space-between; font-size: 10px; color: var(--muted); }
+.transparency-control p { font-size: 11px; color: var(--muted); margin-top: 8px; }
+.transparency-control.is-disabled { opacity: .55; }
 .toggle { background: var(--field-edge); }
 .toggle:before { background: var(--card); }
 .toggle:checked { background: var(--mint); }

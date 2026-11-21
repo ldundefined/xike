@@ -1,14 +1,18 @@
 import { defaultSettings, type Settings } from '../shared/types';
+import { isLanguage } from '../shared/i18n';
 
 export function validateSettings(input: unknown): Settings {
   if (!input || typeof input !== 'object') throw new Error('设置格式无效');
   const value = input as Record<string, unknown>;
   const result = { ...defaultSettings };
+  if (!isLanguage(value.language)) throw new Error('请选择有效的界面语言');
+  result.language = value.language;
   if (!['light', 'dark', 'system'].includes(value.theme as string)) throw new Error('请选择有效的界面主题');
   result.theme = value.theme as Settings['theme'];
   for (const [key, min, max] of [
     ['eyeMinutes', 1, 240], ['waterMinutes', 1, 240], ['moveMinutes', 1, 240],
     ['eyeSeconds', 10, 300], ['moveSeconds', 30, 1800], ['idleMinutes', 1, 30],
+    ['glassTransparency', 0, 100],
   ] as const) {
     const n = value[key];
     if (typeof n !== 'number' || !Number.isInteger(n) || n < min || n > max)

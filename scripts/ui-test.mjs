@@ -24,6 +24,17 @@ try {
   const widget = await find('widget'), settings = await find('settings');
   widget.setDefaultTimeout(10_000); settings.setDefaultTimeout(10_000);
   console.log('UI: 窗口已加载');
+  assert.equal((await widget.evaluate(() => window.xike.getState())).settings.language, 'en');
+  await settings.getByRole('heading', { name: 'Appearance', exact: true }).waitFor();
+  await widget.getByText('Next eye break', { exact: true }).waitFor();
+  assert.equal(await widget.evaluate(() => document.documentElement.lang), 'en');
+  await widget.screenshot({ path: 'docs/screenshots/widget-en.png' });
+  await settings.screenshot({ path: 'docs/screenshots/settings-en.png', fullPage: true });
+  await settings.getByLabel('Interface language', { exact: true }).selectOption('zh-CN');
+  await settings.getByRole('heading', { name: '外观与主题', exact: true }).waitFor();
+  await widget.getByText('下次护眼休息', { exact: true }).waitFor();
+  assert.equal(await settings.evaluate(() => document.documentElement.lang), 'zh-CN');
+  console.log('UI: 默认英文及即时切换中文通过');
   const dock = await app.evaluate(({ BrowserWindow, screen }) => {
     const window = BrowserWindow.getAllWindows().find(window => window.webContents.getURL().includes('view=widget'));
     const bounds = window.getBounds();
@@ -66,6 +77,21 @@ try {
     assert.equal(appearance.material, 'solid');
     await settings.getByText(appearance.glassReason, { exact: true }).waitFor();
   }
+  const transparency = settings.getByRole('slider', { name: '背景透明度', exact: true });
+  await transparency.focus();
+  await transparency.press('End');
+  await widget.waitForFunction(() => getComputedStyle(document.documentElement).getPropertyValue('--glass-alpha').trim() === '0');
+  assert.equal((await state()).settings.glassTransparency, 100);
+  await transparency.press('Home');
+  await widget.waitForFunction(() => getComputedStyle(document.documentElement).getPropertyValue('--glass-alpha').trim() === '1');
+  assert.equal((await state()).settings.glassTransparency, 0);
+  await transparency.press('PageUp');
+  await transparency.press('PageUp');
+  await transparency.press('PageUp');
+  await transparency.press('PageUp');
+  await transparency.press('PageUp');
+  await widget.waitForFunction(() => getComputedStyle(document.documentElement).getPropertyValue('--glass-alpha').trim() === '0.5');
+  assert.equal((await state()).settings.glassTransparency, 50);
   console.log('UI: 三种主题和毛玻璃回退通过');
   await widget.getByTitle('暂停健康提醒', { exact: true }).click();
   assert.equal((await state()).manualPaused, true);
@@ -154,9 +180,20 @@ try {
   const restored = await restoredWidget.evaluate(() => window.xike.getState());
   console.log('UI: 重启前后外观', beforeRestart.settings.theme, restored.settings.theme, profile);
   assert.equal(restored.settings.theme, 'light');
+  assert.equal(restored.settings.language, 'zh-CN');
+  assert.equal(restored.settings.glassTransparency, 50);
   assert.equal(restored.shutdown.time, beforeRestart.shutdown.time);
   assert.equal(restored.shutdown.consumedDate, beforeRestart.shutdown.consumedDate);
   assert.equal(restored.shutdown.at, beforeRestart.shutdown.at);
+  const restoredSettings = await find('settings');
+  await restoredSettings.getByLabel('界面语言', { exact: true }).selectOption('en');
+  await restoredWidget.getByText('Next eye break', { exact: true }).waitFor();
+  const noticeResult = await restoredWidget.evaluate(() => window.xike.command({ type: 'start', kind: 'eye' }));
+  assert.equal(noticeResult.ok, true);
+  const englishNotice = await find('notice');
+  await englishNotice.getByRole('heading', { name: 'Look a little farther', exact: true }).waitFor();
+  await englishNotice.screenshot({ path: 'docs/screenshots/rest-en.png' });
+  assert.equal(await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows().find(w => w.webContents.getURL().includes('view=settings')).getTitle()), 'Xike · Settings');
   assert.deepEqual(errors, []);
   console.log('UI PASS: 主题切换、系统主题、毛玻璃回退、每日关机保存/跳过/关闭、退出重启保留计划、暂停/恢复、休息、喝水、小屏布局。');
 } catch (error) {

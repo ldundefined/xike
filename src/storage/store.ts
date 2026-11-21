@@ -16,7 +16,7 @@ export class Store {
       if (raw.schemaVersion !== 1 && raw.schemaVersion !== 2) throw new Error('未知的配置版本');
       // V0.1.x configs have no appearance fields. Add only the new defaults;
       // existing invalid reminder fields must still fail validation.
-      const settings = validateSettings({ theme: defaultSettings.theme, glass: defaultSettings.glass, ...raw.settings });
+      const settings = validateSettings({ language: defaultSettings.language, theme: defaultSettings.theme, glass: defaultSettings.glass, glassTransparency: defaultSettings.glassTransparency, ...raw.settings });
       // Never silently convert an old one-off booking into a recurring plan.
       const time = raw.schemaVersion === 1 ? null : raw.shutdownTime;
       const consumedDate = raw.schemaVersion === 1 ? null : raw.consumedShutdownDate;
