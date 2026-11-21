@@ -102,8 +102,8 @@ export class Engine {
     if (!this.rest) return;
     const kind = this.rest.kind;
     this.rest = null;
-    this.remaining[kind] = 5 * minute;
-    this.message = '本次休息已结束，5 分钟后再次提醒';
+    this.remaining[kind] = this.interval(kind);
+    this.message = '本次休息已结束，下次按设置的间隔提醒';
   }
   tick(input: TickInput): Effects {
     const effects: Effects = { warnShutdown: false, executeShutdown: false, shutdownChanged: false, dueChanged: false };

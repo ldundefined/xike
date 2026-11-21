@@ -77,7 +77,7 @@ export const english: Record<string, string> = {
   '已跳过本次关机，每日计划保留': 'Skipped this shutdown. The daily plan stays enabled.',
   '已取消错过时间的关机预约，请重新设置': 'The missed shutdown was cancelled. Please schedule it again.', '已取消本次关机': 'This shutdown was cancelled.',
   '请先完成或结束当前休息': 'Finish or end the current break first.', '已记录喝水，保持少量多次': 'Water recorded. Keep taking small, regular sips.',
-  '已延后 5 分钟提醒': 'Reminder snoozed for 5 minutes.', '本次休息已结束，5 分钟后再次提醒': 'Break ended. We will remind you in 5 minutes.',
+  '已延后 5 分钟提醒': 'Reminder snoozed for 5 minutes.', '本次休息已结束，下次按设置的间隔提醒': 'Break ended. The next reminder follows your configured interval.',
   '已向 Windows 发送关机请求': 'Shutdown requested from Windows.', '提醒已暂停': 'Reminders paused', '电脑休眠中': 'Computer is sleeping',
   '锁屏中': 'Screen is locked', '免打扰时段': 'Quiet hours', '离开电脑，计时暂停': 'Away · Timers paused',
   '护眼休息完成，欢迎回来': 'Eye break complete. Welcome back.', '活动完成，继续保持好状态': 'Movement break complete. Keep it up.',

@@ -50,11 +50,55 @@ test('休息期间暂停其他计时，完成后恢复本类型间隔', () => {
   assert.equal(h.engine.remaining.water, water);
   h.advance(1000); assert.equal(h.engine.remaining.water, water - 1000);
 });
-test('稍后提醒与结束休息都延后五分钟，不标记完成', () => {
+test('只有显式稍后提醒延后五分钟，结束休息恢复配置周期', () => {
   const h = harness({ eyeMinutes: 1 }); h.advance(60_000);
   h.engine.snooze('eye'); assert.equal(h.engine.remaining.eye, 300_000); assert.equal(h.engine.due.length, 0);
   h.engine.start('move'); h.engine.cancelRest();
-  assert.equal(h.engine.rest, null); assert.equal(h.engine.remaining.move, 300_000);
+  assert.equal(h.engine.rest, null); assert.equal(h.engine.remaining.move, h.engine.interval('move'));
+});
+
+for (const [kind, interval] of [['eye', 7], ['move', 11]] as const) {
+  test(`${kind} 自定义周期在多轮自然完成和提前结束后保持生效`, () => {
+    const h = harness({ [`${kind}Minutes`]: interval, eyeSeconds: 10, moveSeconds: 30 });
+    for (let round = 0; round < 4; round++) {
+      h.advance(interval * 60_000 - 1000);
+      assert.equal(h.engine.due.includes(kind), false);
+      h.advance(1000);
+      assert.equal(h.engine.due.includes(kind), true);
+      h.engine.start(kind);
+      if (round % 2 === 0) h.engine.cancelRest();
+      else h.advance((kind === 'eye' ? 10 : 30) * 1000);
+      assert.equal(h.engine.rest, null);
+      assert.equal(h.engine.remaining[kind], interval * 60_000);
+      assert.equal(h.engine.settings[`${kind}Minutes`], interval);
+    }
+  });
+}
+test('喝水确认连续多轮保留自定义周期', () => {
+  const h = harness({ waterMinutes: 9 });
+  for (let round = 0; round < 4; round++) {
+    h.advance(9 * 60_000);
+    assert.equal(h.engine.due.includes('water'), true);
+    h.engine.start('water');
+    assert.equal(h.engine.remaining.water, 9 * 60_000);
+  }
+});
+test('显式延后五分钟只影响当次，之后恢复自定义周期', () => {
+  const h = harness({ eyeMinutes: 13, eyeSeconds: 10 });
+  h.advance(13 * 60_000); h.engine.snooze('eye');
+  assert.equal(h.engine.settings.eyeMinutes, 13);
+  h.advance(299_000); assert.equal(h.engine.due.includes('eye'), false);
+  h.advance(1000); assert.equal(h.engine.due.includes('eye'), true);
+  h.engine.start('eye'); h.engine.cancelRest();
+  assert.equal(h.engine.remaining.eye, 13 * 60_000);
+  h.advance(13 * 60_000); assert.equal(h.engine.due.includes('eye'), true);
+  h.engine.start('eye'); h.advance(10_000);
+  assert.equal(h.engine.remaining.eye, 13 * 60_000);
+});
+test('休息中修改间隔后结束休息，使用最新配置周期', () => {
+  const h = harness({ moveMinutes: 17 }); h.engine.start('move');
+  h.engine.updateSettings({ ...h.engine.settings, moveMinutes: 23 });
+  h.engine.cancelRest(); assert.equal(h.engine.remaining.move, 23 * 60_000);
 });
 test('喝水确认只重置喝水计时，不能叠加两次休息', () => {
   const h = harness(); h.advance(5000); h.engine.start('eye');

@@ -140,6 +140,9 @@ try {
   await notice.screenshot({ path: 'docs/screenshots/rest.png' });
   await notice.getByRole('button', { name: '结束本次休息' }).click();
   assert.equal((await state()).rest, null);
+  const afterEnd = await state();
+  assert.ok(afterEnd.remaining.eye >= afterEnd.settings.eyeMinutes * 60_000 - 2000,
+    '结束休息后必须按配置周期重新计时，不能变成五分钟');
   await widget.getByRole('button', { name: '已喝水', exact: true }).click();
   assert.ok((await state()).remaining.water >= 3_599_000);
   const beforeSkip = (await state()).shutdown.at;

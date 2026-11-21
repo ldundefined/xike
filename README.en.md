@@ -4,7 +4,7 @@
 
 A Windows desktop companion for eye breaks, drinking water, movement, and a daily shutdown routine.
 
-**Current version: V1.1.0**
+**Current version: V1.1.1**
 
 **Status: A working Windows desktop application with an installer and an unpacked build.**
 
@@ -12,9 +12,9 @@ Source: [ldundefined/xike](https://github.com/ldundefined/xike). Download Window
 
 ## Install and use
 
-Supported platform: Windows 10/11 x64. Outputs are placed in `release/v1.1.0/`, isolating each version so a new build does not clean an older running build:
+Supported platform: Windows 10/11 x64. Outputs are placed in `release/v1.1.1/`, isolating each version so a new build does not clean an older running build:
 
-- `Xike-Setup-1.1.0.exe`: run the installation wizard, then launch the app.
+- `Xike-Setup-1.1.1.exe`: run the installation wizard, then launch the app.
 - `win-unpacked/息刻.exe`: the unpacked executable. Keep the entire `win-unpacked` directory; copying only the executable will not work.
 
 The widget docks to the right edge of the selected display. It stays 312px wide and fills the available desktop height without covering the taskbar. A live clock, full date, and weekday appear at the top. Drag the top area to another display to dock there. Click the status beside the brand name to pause or resume health reminders.
@@ -124,6 +124,7 @@ These are adjustable product defaults, not universal health requirements. The wa
 - Resume without sending a backlog of reminders accumulated during absence.
 - Simultaneous health reminders are presented sequentially rather than stacking popups.
 - Hiding the widget or closing settings does not stop the scheduler. Quitting the app does.
+- Completing or ending a break resets the next countdown to that reminder's configured interval. Confirming water restores the water interval. Only explicitly choosing **Remind me in 5 minutes** temporarily delays that occurrence; it never changes the saved interval.
 
 ### Daily shutdown
 
@@ -244,6 +245,12 @@ Use `Vmajor.feature.fix`, starting at **V0.0.1**.
 - Keep both README versions, changelogs, package metadata, and build versions consistent. Program metadata omits the `V` prefix.
 
 ## Changelog
+
+### V1.1.1 · 2026-11-21
+
+- Fix ending an eye or movement break resetting the next reminder to a hard-coded five minutes. It now uses the corresponding configured interval.
+- Keep the explicit five-minute snooze temporary. Completing or ending the subsequent break restores the custom cycle without changing preferences.
+- Add multi-cycle eye/movement/water regression checks, changes made during a break, and a real-window assertion for the countdown after ending a break. The automated suite now contains 40 tests.
 
 ### V1.1.0 · 2026-11-21
 
