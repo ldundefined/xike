@@ -21,6 +21,7 @@ export interface Settings {
   idleMinutes: number;
   autoStart: boolean;
   sound: boolean;
+  remindersOnTop: boolean;
   quietEnabled: boolean;
   quietStart: string;
   quietEnd: string;
@@ -30,7 +31,7 @@ export const defaultSettings: Settings = {
   theme: 'light', glass: true, glassTransparency: 50,
   eyeMinutes: 20, waterMinutes: 60, moveMinutes: 50,
   eyeSeconds: 20, moveSeconds: 300, idleMinutes: 2,
-  autoStart: false, sound: false, quietEnabled: false,
+  autoStart: false, sound: false, remindersOnTop: true, quietEnabled: false,
   quietStart: '22:00', quietEnd: '08:00',
 };
 export interface StoredData {

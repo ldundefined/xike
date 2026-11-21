@@ -20,6 +20,7 @@ const ownsLock = app.requestSingleInstanceLock();
 let widget: BrowserWindow | null = null;
 let settingsWindow: BrowserWindow | null = null;
 let notice: BrowserWindow | null = null;
+let noticeReady = false, noticeFocusRequested = false;
 let tray: Tray | null = null;
 let engine: Engine;
 let store: Store;
@@ -137,18 +138,38 @@ function openSettings() {
   settingsWindow.once('ready-to-show', () => settingsWindow?.show());
   settingsWindow.on('closed', () => { settingsWindow = null; });
 }
+function configureNoticeLayer() {
+  if (!notice || notice.isDestroyed()) return;
+  notice.setAlwaysOnTop(engine.settings.remindersOnTop, 'screen-saver');
+}
+function raiseVisibleNotice() {
+  // Never revive a reminder the user dismissed or take focus from a game.
+  if (!notice || notice.isDestroyed() || !notice.isVisible() || !engine.settings.remindersOnTop) return;
+  if (!notice.isAlwaysOnTop()) configureNoticeLayer();
+  notice.moveTop();
+}
+function presentNotice() {
+  if (!notice || !noticeReady || notice.isDestroyed()) return;
+  const area = screen.getDisplayNearestPoint(screen.getCursorScreenPoint()).workArea;
+  notice.setBounds({ x: area.x + Math.max(0, area.width - 396), y: area.y + Math.max(0, area.height - 380),
+    width: Math.min(376, area.width), height: Math.min(360, area.height) });
+  configureNoticeLayer();
+  if (noticeFocusRequested) notice.show(); else notice.showInactive();
+  noticeFocusRequested = false;
+  raiseVisibleNotice();
+}
 function showNotice(focus = false) {
-  const area = screen.getDisplayMatching(widget?.getBounds() ?? defaultBounds()).workArea;
+  noticeFocusRequested ||= focus;
   if (!notice) {
+    noticeReady = false;
     notice = createWindow('notice', 376, 360);
-    notice.setAlwaysOnTop(true, 'floating');
-    notice.setPosition(area.x + area.width - 396, area.y + area.height - 380);
-    notice.once('ready-to-show', () => focus ? notice?.show() : notice?.showInactive());
+    configureNoticeLayer();
+    notice.once('ready-to-show', () => { noticeReady = true; presentNotice(); });
     notice.on('close', event => {
       if (!quitting) { event.preventDefault(); notice?.hide(); }
     });
-    notice.on('closed', () => { notice = null; });
-  } else { focus ? notice.show() : notice.showInactive(); }
+    notice.on('closed', () => { notice = null; noticeReady = false; noticeFocusRequested = false; });
+  } else presentNotice();
 }
 function rebuildTray() {
   const t = translator(data.settings.language);
@@ -211,6 +232,7 @@ async function command(raw: unknown, role: 'widget' | 'settings' | 'notice'): Pr
         data.settings = settings;
         engine.updateSettings(settings);
         syncAppearance();
+        configureNoticeLayer();
         engine.message = '设置已保存';
         break;
       }
@@ -260,7 +282,7 @@ function pulse() {
     rebuildTray();
   }
   if (effects.warnShutdown) {
-    showNotice(true);
+    showNotice();
     if (engine.settings.sound) shell.beep();
   }
   if (effects.executeShutdown) {
@@ -275,6 +297,7 @@ function pulse() {
     else notice?.hide();
   }
   if (!engine.due.length && !engine.rest && engine.shutdownStatus !== 'warning') notice?.hide();
+  raiseVisibleNotice();
   broadcast();
 }
 

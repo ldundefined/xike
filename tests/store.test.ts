@@ -30,7 +30,7 @@ test('旧配置迁移保留提醒和位置，补充主题但不把单次预约�
   const directory = mkdtempSync(join(tmpdir(), 'xike-store-'));
   try {
     const store = new Store(directory), data = store.load();
-    const { theme, glass, language, glassTransparency, ...legacySettings } = data.settings;
+    const { theme, glass, language, glassTransparency, remindersOnTop, ...legacySettings } = data.settings;
     legacySettings.eyeMinutes = 35;
     writeFileSync(store.path, JSON.stringify({ schemaVersion: 1, settings: legacySettings, shutdownAt: Date.now() + 900_000, position: { x: 12, y: 30 } }));
     const migrated = store.load();
@@ -38,6 +38,7 @@ test('旧配置迁移保留提醒和位置，补充主题但不把单次预约�
     assert.equal(migrated.settings.eyeMinutes, 35); assert.deepEqual(migrated.position, { x: 12, y: 30 });
     assert.equal(migrated.settings.language, 'en');
     assert.equal(migrated.settings.glassTransparency, 50);
+    assert.equal(migrated.settings.remindersOnTop, true);
     assert.equal(migrated.shutdownTime, null); assert.equal(store.warning, '');
   } finally { rmSync(directory, { recursive: true }); }
 });

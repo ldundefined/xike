@@ -212,6 +212,8 @@ function SettingsView({ state, send }: ViewProps) {
       <section className="settings-card"><div className="card-heading"><Moon size={19}/><h2>{t("免打扰与偏好")}</h2></div>
         <Toggle label={t("开机自动启动")} description={t("登录 Windows 后启动息刻并显示桌面组件")} checked={draft.autoStart} change={v => set('autoStart', v)}/>
         <Toggle label={t("提醒提示音")} description={t("健康提醒和关机前提醒时播放系统提示音")} checked={draft.sound} change={v => set('sound', v)}/>
+        <Toggle label={t('全屏置顶提醒')} description={t('将提醒显示在其他窗口上方，不抢占键盘焦点。')} checked={draft.remindersOnTop} change={v => set('remindersOnTop', v)}/>
+        <p className="fine-print">{t('支持普通及无边框全屏；独占全屏游戏建议使用无边框模式。')}</p>
         <Toggle label={t("定时免打扰")} description={t("暂停健康提醒计时，不影响关机预告")} checked={draft.quietEnabled} change={v => set('quietEnabled', v)}/>
         {draft.quietEnabled && <div className="quiet-range"><label>{t("开始")}<input aria-label={t("免打扰开始")} type="time" required value={draft.quietStart} onChange={e => set('quietStart', e.target.value)}/></label><span>{t("至")}</span><label>{t("结束")}<input aria-label={t("免打扰结束")} type="time" required value={draft.quietEnd} onChange={e => set('quietEnd', e.target.value)}/></label></div>}
         <div className="save-row"><span role="status" className="save-feedback">{t(feedback)}</span><button type="submit" className="primary" disabled={busy}>{busy ? t("保存中…") : t("保存设置")}</button></div>

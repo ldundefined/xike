@@ -1,7 +1,7 @@
 {
   "name": "xike",
   "productName": "息刻",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "description": "息刻 · Windows 桌面健康提醒",
   "author": "息刻",
   "private": true,
@@ -13,6 +13,7 @@
     "start": "electron .",
     "test": "tsx --test tests/*.test.ts",
     "test:ui": "pnpm build && node scripts/ui-test.mjs",
+    "test:fullscreen": "pnpm build && node scripts/fullscreen-test.mjs",
     "check": "tsc --noEmit",
     "pack": "pnpm build && electron-builder --win --x64 --dir",
     "dist": "pnpm build && electron-builder --win nsis --x64"

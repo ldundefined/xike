@@ -4,7 +4,7 @@
 
 A Windows desktop companion for eye breaks, drinking water, movement, and a daily shutdown routine.
 
-**Current version: V1.1.1**
+**Current version: V1.2.0**
 
 **Status: A working Windows desktop application with an installer and an unpacked build.**
 
@@ -12,9 +12,9 @@ Source: [ldundefined/xike](https://github.com/ldundefined/xike). Download Window
 
 ## Install and use
 
-Supported platform: Windows 10/11 x64. Outputs are placed in `release/v1.1.1/`, isolating each version so a new build does not clean an older running build:
+Supported platform: Windows 10/11 x64. Outputs are placed in `release/v1.2.0/`, isolating each version so a new build does not clean an older running build:
 
-- `Xike-Setup-1.1.1.exe`: run the installation wizard, then launch the app.
+- `Xike-Setup-1.2.0.exe`: run the installation wizard, then launch the app.
 - `win-unpacked/息刻.exe`: the unpacked executable. Keep the entire `win-unpacked` directory; copying only the executable will not work.
 
 The widget docks to the right edge of the selected display. It stays 312px wide and fills the available desktop height without covering the taskbar. A live clock, full date, and weekday appear at the top. Drag the top area to another display to dock there. Click the status beside the brand name to pause or resume health reminders.
@@ -30,6 +30,14 @@ The widget, settings, reminder windows, tray menu, status and error messages, da
 ### Background transparency
 
 The **Frosted glass** switch applies to the widget and reminder windows. Its **Background transparency** slider ranges from **0% to 100%**, with a default of **50%**. Lower values make the background more opaque; higher values reveal more of the blurred desktop. Text and buttons remain opaque. Changes are applied and saved immediately. The settings window keeps a solid background for readability.
+
+### Reminders over full-screen windows
+
+**Keep reminders above full-screen apps** is enabled by default under **Quiet hours & preferences**. Click **Save settings** after changing it. Reminders appear on the display containing the cursor, use a higher always-on-top level, and refresh their position in the window stacking order while visible. The desktop sidebar keeps its ordinary window behavior.
+
+Automatic health reminders and shutdown warnings do not take keyboard focus. Explicitly opening a reminder through the tray may focus it. A dismissed reminder is not reopened by topmost maintenance.
+
+This supports ordinary and borderless full-screen windows. **Exclusive full-screen games cannot be guaranteed:** use borderless/windowed full-screen mode when reminders must be visible. Xike does not inject a game overlay or force a game to the desktop. See [Electron window levels](https://www.electronjs.org/docs/latest/api/browser-window/).
 
 ### Startup and shutdown
 
@@ -76,6 +84,7 @@ Vite serves the renderer during development. Restart the development command aft
 pnpm check       # TypeScript checks
 pnpm test        # Domain, storage, and i18n tests
 pnpm test:ui     # Build and test real Electron windows; simulate shutdown/startup
+pnpm test:fullscreen # Windows fullscreen, native z-order, focus, and dismissal checks
 node scripts/glass-test.mjs # Verify native glass on an interactive Windows desktop
 pnpm build       # Compile into dist/
 pnpm start       # Run the compiled application
@@ -224,6 +233,7 @@ Validation covers pause/resume, simultaneous reminders, lock/sleep handling, fiv
 - Widget geometry and the compact 560px layout are verified, including the clock and shutdown controls.
 - Real system shutdown, Windows login startup, full system lock/sleep flows, and the Windows 11 native backdrop require manual acceptance in the corresponding environment.
 - The widget can be covered by normal windows and follows ordinary **Win+D** behavior.
+- Full-screen reminder verification uses an actual Windows full-screen fixture and native z-order inspection, including competing topmost windows, focus preservation, dismissal, and opt-out. It does not establish compatibility with every game or DirectX exclusive full-screen mode.
 - Health reminders pause during quiet hours or absence, then resume in sequence.
 - The installer is unsigned, and there is no automatic update service.
 
@@ -245,6 +255,14 @@ Use `Vmajor.feature.fix`, starting at **V0.0.1**.
 - Keep both README versions, changelogs, package metadata, and build versions consistent. Program metadata omits the `V` prefix.
 
 ## Changelog
+
+### V1.2.0 · 2026-11-21
+
+- Add the enabled-by-default full-screen reminder preference. Reminder windows use the higher `screen-saver` level and maintain their z-order while visible.
+- Show reminders on the cursor's display and reposition/reassert topmost behavior when reusing a window.
+- Preserve keyboard focus for automatic health reminders and shutdown warnings; tray-requested reminders may focus explicitly.
+- Keep dismissed reminders hidden and leave the sidebar's window level unchanged.
+- Add a Windows fullscreen/native z-order integration test and document the exclusive full-screen limitation.
 
 ### V1.1.1 · 2026-11-21
 

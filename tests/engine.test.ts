@@ -171,6 +171,6 @@ test('免打扰支持跨午夜与日内区间，边界准确', () => {
 test('配置拒绝非法间隔、开关和时段', () => {
   assert.deepEqual(validateSettings(defaultSettings), defaultSettings);
   for (const patch of [{ eyeMinutes: 0 }, { waterMinutes: 1.2 }, { autoStart: 'true' }, { quietStart: '24:01' },
-    { quietEnabled: true, quietStart: '08:00', quietEnd: '08:00' }, { eyeSeconds: NaN }])
+    { quietEnabled: true, quietStart: '08:00', quietEnd: '08:00' }, { eyeSeconds: NaN }, { remindersOnTop: 'true' }])
     assert.throws(() => validateSettings({ ...defaultSettings, ...patch }));
 });

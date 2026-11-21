@@ -19,7 +19,7 @@ export function validateSettings(input: unknown): Settings {
       throw new Error(`${key} 需要是 ${min}–${max} 之间的整数`);
     result[key] = n;
   }
-  for (const key of ['autoStart', 'sound', 'quietEnabled', 'glass'] as const) {
+  for (const key of ['autoStart', 'sound', 'quietEnabled', 'glass', 'remindersOnTop'] as const) {
     if (typeof value[key] !== 'boolean') throw new Error('开关设置无效');
     result[key] = value[key];
   }
